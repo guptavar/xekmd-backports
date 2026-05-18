@@ -1,0 +1,25 @@
+From: Varun Gupta <varun.gupta@intel.com>
+Subject: [PATCH] drm/ttm/backup: use 0 instead of EMPTY_VMA_FLAGS
+
+Same fix as ttm_tt.c but for the ttm_backup.c source.
+
+Signed-off-by: Varun Gupta <varun.gupta@intel.com>
+---
+ drivers/gpu/drm/ttm/ttm_backup.c | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/drivers/gpu/drm/ttm/ttm_backup.c b/drivers/gpu/drm/ttm/ttm_backup.c
+--- a/drivers/gpu/drm/ttm/ttm_backup.c
++++ b/drivers/gpu/drm/ttm/ttm_backup.c
+@@ -179,5 +179,9 @@ EXPORT_SYMBOL_GPL(ttm_backup_bytes_avail);
+ struct file *ttm_backup_shmem_create(loff_t size)
+ {
++#ifdef BPM_EMPTY_VMA_FLAGS_NOT_PRESENT
++	return shmem_file_setup("ttm shmem backup", size, 0);
++#else
+ 	return shmem_file_setup("ttm shmem backup", size,
+ 				EMPTY_VMA_FLAGS);
++#endif
+ }
+-- 
+2.34.1

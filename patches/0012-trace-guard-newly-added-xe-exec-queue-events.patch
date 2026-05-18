@@ -1,0 +1,53 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Varun Gupta <varun.gupta1@intel.com>
+Date: Mon, 27 Apr 2026 09:00:00 +0530
+Subject: [PATCH] trace: Guard newly added xe_exec_queue trace events for older
+ assign_str
+
+The kernel grew two more TP_fast_assign() blocks in xe_trace.h:
+xe_exec_queue_multi_queue (DECLARE_EVENT_CLASS) and the
+xe_exec_queue_reach_max_job_count event. Both use the single-argument
+form of __assign_str() introduced in v6.10 (see 2c92ca849fcc
+"tracing/treewide: Remove second parameter of __assign_str()").
+
+Older kernels still expect the two-argument form, so wrap these new
+sites in BPM_ASSIGN_STR_SECOND_ARG_PRESENT just like the existing
+xe_exec_queue/xe_gt_tlb_invalidation_fence entries.
+
+Reference-id: 2c92ca849fcc tracing/treewide: Remove second parameter of __assign_str()
+
+Signed-off-by: Varun Gupta <varun.gupta1@intel.com>
+---
+ drivers/gpu/drm/xe/xe_trace.h | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/drivers/gpu/drm/xe/xe_trace.h b/drivers/gpu/drm/xe/xe_trace.h
+--- a/drivers/gpu/drm/xe/xe_trace.h
++++ b/drivers/gpu/drm/xe/xe_trace.h
+@@ -123,7 +123,11 @@ DECLARE_EVENT_CLASS(xe_exec_queue_multi_queue,
+ 			     ),
+ 
+ 		    TP_fast_assign(
++#ifdef BPM_ASSIGN_STR_SECOND_ARG_PRESENT
++			   __assign_str(dev, __dev_name_eq(q));
++#else
+ 			   __assign_str(dev);
++#endif
+ 			   __entry->class = q->class;
+ 			   __entry->logical_mask = q->logical_mask;
+ 			   __entry->gt_id = q->gt->info.id;
+@@ -521,7 +525,11 @@ TRACE_EVENT(xe_exec_queue_reach_max_job_count,
+ 			     __field(int, max_cnt)
+ 			     ),
+ 
++#ifdef BPM_ASSIGN_STR_SECOND_ARG_PRESENT
++	    TP_fast_assign(__assign_str(dev, __dev_name_eq(q));
++#else
+ 	    TP_fast_assign(__assign_str(dev);
++#endif
+ 			   __entry->class = q->class;
+ 			   __entry->logical_mask = q->logical_mask;
+ 			   __entry->guc_id = q->guc->id;
+-- 
+2.43.0
+

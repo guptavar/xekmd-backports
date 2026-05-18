@@ -27,9 +27,9 @@ index 0f3cef6..9c69a0e 100644
  	help
  	  GPU-VM representation providing helpers to manage a GPUs virtual
 @@ -45,7 +46,7 @@ config DRM_XE
- 	select DRM_TTM
  	select DRM_TTM_HELPER
  	select DRM_EXEC
+ 	select DRM_GPUSVM if !UML
 -	select DRM_GPUVM
 +	select DRM_GPUVM if BUILD_XE_DRM_GPUVM
  	select DRM_SCHED

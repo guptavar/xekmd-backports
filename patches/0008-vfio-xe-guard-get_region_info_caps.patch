@@ -1,0 +1,26 @@
+From: Varun Gupta <varun.gupta@intel.com>
+Subject: [PATCH] vfio/xe: guard get_region_info_caps for older kernels
+
+The .get_region_info_caps callback in vfio_device_ops was introduced
+in v7.0. Compile it out on older kernels where it's not available.
+
+Signed-off-by: Varun Gupta <varun.gupta@intel.com>
+---
+ drivers/vfio/pci/xe/main.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/drivers/vfio/pci/xe/main.c b/drivers/vfio/pci/xe/main.c
+--- a/drivers/vfio/pci/xe/main.c
++++ b/drivers/vfio/pci/xe/main.c
+@@ -513,7 +513,9 @@ static const struct vfio_device_ops xe_vfio_pci_ops = {
+ 	.open_device = xe_vfio_pci_open_device,
+ 	.close_device = xe_vfio_pci_close_device,
+ 	.ioctl = vfio_pci_core_ioctl,
++#ifndef BPM_VFIO_GET_REGION_INFO_CAPS_NOT_PRESENT
+ 	.get_region_info_caps = vfio_pci_ioctl_get_region_info,
++#endif
+ 	.device_feature = vfio_pci_core_ioctl_feature,
+ 	.read = vfio_pci_core_read,
+ 	.write = vfio_pci_core_write,
+-- 
+2.34.1

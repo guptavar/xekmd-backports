@@ -1,0 +1,69 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Varun Gupta <varun.gupta1@intel.com>
+Date: Mon, 27 Apr 2026 09:00:00 +0530
+Subject: [PATCH] drm/xe/configfs: Guard is_visible group op for older kernels
+
+configfs_group_operations gained the .is_visible callback in v7.0-rc1
+to allow groups to dynamically hide their attributes. Older kernels do
+not have this member, so initialising it fails to build with:
+
+  error: 'struct configfs_group_operations' has no member named 'is_visible'
+
+Detect the field via the new AC_CONFIGFS_GROUP_OPS_IS_VISIBLE_NOT_PRESENT
+autotools macro and skip the assignment (and the corresponding callback
+implementations) when the field is missing, so the rest of configfs
+keeps working with the same UX as before.
+
+Signed-off-by: Varun Gupta <varun.gupta1@intel.com>
+---
+ drivers/gpu/drm/xe/xe_configfs.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/drivers/gpu/drm/xe/xe_configfs.c b/drivers/gpu/drm/xe/xe_configfs.c
+--- a/drivers/gpu/drm/xe/xe_configfs.c
++++ b/drivers/gpu/drm/xe/xe_configfs.c
+@@ -839,6 +839,7 @@ static struct configfs_item_operations xe_config_device_ops = {
+ 	.release	= xe_config_device_release,
+ };
+ 
++#ifndef BPM_CONFIGFS_IS_VISIBLE_NOT_PRESENT
+ static bool xe_config_device_is_visible(struct config_item *item,
+ 					struct configfs_attribute *attr, int n)
+ {
+@@ -851,9 +852,12 @@ static bool xe_config_device_is_visible(struct config_item *item,
+ 
+ 	return true;
+ }
++#endif
+ 
+ static struct configfs_group_operations xe_config_device_group_ops = {
++#ifndef BPM_CONFIGFS_IS_VISIBLE_NOT_PRESENT
+ 	.is_visible	= xe_config_device_is_visible,
++#endif
+ };
+ 
+ static const struct config_item_type xe_config_device_type = {
+@@ -904,6 +908,7 @@ static struct configfs_attribute *xe_config_sriov_attrs[] = {
+ 	NULL,
+ };
+ 
++#ifndef BPM_CONFIGFS_IS_VISIBLE_NOT_PRESENT
+ static bool xe_config_sriov_is_visible(struct config_item *item,
+ 				       struct configfs_attribute *attr, int n)
+ {
+@@ -914,9 +919,12 @@ static bool xe_config_sriov_is_visible(struct config_item *item,
+ 
+ 	return true;
+ }
++#endif
+ 
+ static struct configfs_group_operations xe_config_sriov_group_ops = {
++#ifndef BPM_CONFIGFS_IS_VISIBLE_NOT_PRESENT
+ 	.is_visible	= xe_config_sriov_is_visible,
++#endif
+ };
+ 
+ static const struct config_item_type xe_config_sriov_type = {
+-- 
+2.43.0
+
